@@ -165,7 +165,7 @@ struct ContentView: View {
     var body: some View {
         VStack{
             
-            SpriteView(scene: GameScene(size: CGSize(width: 900, height: 800 )) //options: [.ignoresSiblingOrder, .allowsTransparency]
+            SpriteView(scene: GameScene(size: CGSize(width: 500, height: 800 )) //options: [.ignoresSiblingOrder, .allowsTransparency]
             )
               //  .frame(width: 500, height: 900)
                 .ignoresSafeArea()
