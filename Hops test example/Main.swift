@@ -62,15 +62,16 @@ class GameScene: SKScene {
             platforms.append(platform)
         }
 
-         func gameOver() {
-            character.removeFromParent()
-            let gameOverLabel = SKLabelNode(text: "Game Over")
-            gameOverLabel.fontName = "AvenirNext-Bold"
-            gameOverLabel.fontSize = 50
-            gameOverLabel.fontColor = .red
-            gameOverLabel.position = CGPoint(x: frame.midX, y: frame.midY)
-            addChild(gameOverLabel)
-        }
+    func gameOver() {
+        character.removeFromParent() // Remove the character from the scene
+        let gameOverLabel = SKLabelNode(text: "Game Over")
+        gameOverLabel.fontName = "AvenirNext-Bold"
+        gameOverLabel.fontSize = 50
+        gameOverLabel.fontColor = .red
+        gameOverLabel.position = CGPoint(x: frame.midX, y: frame.midY)
+        addChild(gameOverLabel)
+
+    }
 
         override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
             guard let touch = touches.first else { return }
@@ -98,15 +99,14 @@ class GameScene: SKScene {
 
         override func update(_ currentTime: TimeInterval) {
             guard isGameStarted else { return }
+            
+            if character.position.y - (character.size.height * character.yScale / 2) <= self.frame.minY + 60 {
+                gameOver()
+                 isGameStarted = false
+                
+              }
 
           
-            if character.position.y <= self.frame.minY {
-                gameOver()
-                isGameStarted = false
-                return
-            }
-
-         
             if character.position.x < self.frame.minX {
                 character.position.x = self.frame.maxX
             } else if character.position.x > self.frame.maxX {
@@ -152,10 +152,11 @@ class GameScene: SKScene {
             
             if character.physicsBody?.velocity.dy ?? 0 > 600 {
                 character.physicsBody?.velocity.dy = 600
+                
+                
             }
         }
     }
-
 
 
 
