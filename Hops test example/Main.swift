@@ -62,8 +62,18 @@ class GameScene: SKScene {
         lastPlatformY = max(lastPlatformY, position.y) // Keep track of highest platform
     }
 
-    override func update(_ currentTime: TimeInterval) {
-        guard isGameStarted else { return }
+
+    func gameOver() {
+        character.removeFromParent() // Remove the character from the scene
+        let gameOverLabel = SKLabelNode(text: "Game Over")
+        gameOverLabel.fontName = "AvenirNext-Bold"
+        gameOverLabel.fontSize = 50
+        gameOverLabel.fontColor = .red
+        gameOverLabel.position = CGPoint(x: frame.midX, y: frame.midY)
+        addChild(gameOverLabel)
+
+    }
+
 
         // If character falls below the screen -> Game Over
         if character.position.y <= self.frame.minY {
@@ -85,12 +95,34 @@ class GameScene: SKScene {
             character.physicsBody?.velocity.dx = dx * 5
         }
 
-        // Remove platforms that go off-screen
-        for platform in platforms {
-            if platform.position.y < self.frame.minY {
-                platform.removeFromParent()
-                if let index = platforms.firstIndex(of: platform) {
-                    platforms.remove(at: index)
+
+        override func update(_ currentTime: TimeInterval) {
+            guard isGameStarted else { return }
+            
+            if character.position.y - (character.size.height * character.yScale / 2) <= self.frame.minY + 60 {
+                gameOver()
+                 isGameStarted = false
+                
+              }
+
+          
+            if character.position.x < self.frame.minX {
+                character.position.x = self.frame.maxX
+            } else if character.position.x > self.frame.maxX {
+                character.position.x = self.frame.minX
+            }
+
+           
+            if let touchLocation = touchLocation {
+                let dx = touchLocation - character.position.x
+                character.physicsBody?.velocity.dx = dx * 5
+            }
+
+          
+            for platform in platforms {
+                if platform.position.y < self.frame.minY + 20 {
+                    platform.position.y = self.frame.minY + 20
+
                 }
             }
         }
@@ -112,9 +144,11 @@ class GameScene: SKScene {
             }
         }
 
+
         // Limit max jump speed
         if character.physicsBody?.velocity.dy ?? 0 > 600 {
             character.physicsBody?.velocity.dy = 600
+
         }
     }
 
@@ -146,6 +180,7 @@ class GameScene: SKScene {
         guard let touch = touches.first else { return }
         touchLocation = touch.location(in: self).x
     }
+
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         touchLocation = nil
