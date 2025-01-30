@@ -75,27 +75,6 @@ class GameScene: SKScene {
     }
 
 
-        // If character falls below the screen -> Game Over
-        if character.position.y <= self.frame.minY {
-            gameOver()
-            isGameStarted = false
-            return
-        }
-
-        // Allow character to wrap around the screen horizontally
-        if character.position.x < self.frame.minX {
-            character.position.x = self.frame.maxX
-        } else if character.position.x > self.frame.maxX {
-            character.position.x = self.frame.minX
-        }
-
-        // Move character left/right based on touch
-        if let touchLocation = touchLocation {
-            let dx = touchLocation - character.position.x
-            character.physicsBody?.velocity.dx = dx * 5
-        }
-
-
         override func update(_ currentTime: TimeInterval) {
             guard isGameStarted else { return }
             
@@ -128,13 +107,17 @@ class GameScene: SKScene {
         }
 
         // **Spawn new platforms when player reaches a certain height**
+    func newPlatform(){
         if character.position.y > lastPlatformY - (size.height / 2) {
             let newPlatformY = lastPlatformY + CGFloat.random(in: 100...200)
             let randomX = CGFloat.random(in: frame.minX + 50...frame.maxX - 50)
             createPlatform(at: CGPoint(x: randomX, y: newPlatformY))
         }
+    }
+        
 
         // **Allow player to jump on platforms**
+    func jumpPlatforms(){
         if character.physicsBody?.velocity.dy ?? 0 <= 0 {
             for platform in platforms {
                 if character.frame.intersects(platform.frame) {
@@ -143,24 +126,18 @@ class GameScene: SKScene {
                 }
             }
         }
+    }
 
 
         // Limit max jump speed
-        if character.physicsBody?.velocity.dy ?? 0 > 600 {
-            character.physicsBody?.velocity.dy = 600
-
+    func jumpSpeed(){
+        if character.physicsBody?.velocity.dy ?? 0 > 900 {
+            character.physicsBody?.velocity.dy = 900
         }
-    }
+        }
+    
 
-    func gameOver() {
-        character.removeFromParent()
-        let gameOverLabel = SKLabelNode(text: "Game Over")
-        gameOverLabel.fontName = "AvenirNext-Bold"
-        gameOverLabel.fontSize = 50
-        gameOverLabel.fontColor = .red
-        gameOverLabel.position = CGPoint(x: frame.midX, y: frame.midY)
-        addChild(gameOverLabel)
-    }
+   
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
@@ -169,7 +146,7 @@ class GameScene: SKScene {
             // Game start
             isGameStarted = true
             character.physicsBody?.isDynamic = true
-            character.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 300))
+            character.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 170))
             startLabel?.removeFromParent()
         } else {
             touchLocation = touch.location(in: self).x
