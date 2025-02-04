@@ -9,25 +9,26 @@ import SwiftUI
 import GameplayKit
 import SpriteKit
 
-// Make the bottoms of the platoforms "transparent"
 
-    
-class GameScene: SKScene {
+class GameScene: SKScene, SKPhysicsContactDelegate {
     var character: SKSpriteNode!
     var platforms: [SKSpriteNode] = []
     var touchLocation: CGFloat?
     var isGameStarted = false
     var startLabel: SKLabelNode!
-    var lastPlatformY: CGFloat = 0  // Tracks the highest platform's Y position
+    var lastPlatformY: CGFloat = 0  // tracks the highest platform's Y position
 
     override func didMove(to view: SKView) {
-        // Background
-        let background = SKSpriteNode (imageNamed: "grassBackground")
+        self.physicsWorld.contactDelegate = self
+
+        // background
+        let background = SKSpriteNode(imageNamed: "grassBackground")
+        background.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        background.zPosition = -1
         addChild(background)
-        background.position = CGPoint(x: 175, y: 160)
         physicsBody = SKPhysicsBody(edgeLoopFrom: frame)
 
-        // (Placeholder character)
+        // character setup
         character = SKSpriteNode(imageNamed: "Hops")
         character.position = CGPoint(x: frame.midX, y: frame.minY + 100)
         character.physicsBody = SKPhysicsBody(rectangleOf: character.size)
@@ -39,111 +40,95 @@ class GameScene: SKScene {
         character.physicsBody?.isDynamic = false
         character.xScale = 0.2
         character.yScale = 0.2
+        character.physicsBody?.categoryBitMask = 1
+        character.physicsBody?.collisionBitMask = 1
         addChild(character)
 
-        // Create initial platforms
+        // creates initial platforms
         for i in 0..<10 {
             let yPosition = frame.minY + CGFloat(i * 100)
-            createPlatform(at: CGPoint(x: CGFloat.random(in: frame.minX + 50...frame.maxX - 70), y: yPosition))
+            createPlatform(at: CGPoint(x: CGFloat.random(in: 50...(size.width - 50)), y: yPosition))
         }
     }
 
     func createPlatform(at position: CGPoint) {
         let platform = SKSpriteNode(imageNamed: "grassPlatform")
         platform.position = position
-        platform.physicsBody = SKPhysicsBody(rectangleOf: platform.size)
-        platform.physicsBody?.isDynamic = false
-        platform.physicsBody?.friction = 0.0
         platform.xScale = 0.5
         platform.yScale = 0.5
+
+        // create a physics body (this will be removed when the player is below)
+        let platformBody = SKPhysicsBody(rectangleOf: platform.size)
+        platformBody.isDynamic = false
+        platformBody.friction = 0.0
+        platformBody.restitution = 0.8
+        platformBody.categoryBitMask = 1
+        platformBody.collisionBitMask = 1
+        platform.physicsBody = platformBody
+
         addChild(platform)
         platforms.append(platform)
 
-        lastPlatformY = max(lastPlatformY, position.y) // Keep track of highest platform
+        lastPlatformY = max(lastPlatformY, position.y)
     }
 
+    override func update(_ currentTime: TimeInterval) {
+        guard isGameStarted else { return }
+
+        if character.position.y - (character.size.height * character.yScale / 2) <= self.frame.minY + 60 {
+            gameOver()
+            isGameStarted = false
+        }
+
+        if character.position.x < self.frame.minX {
+            character.position.x = self.frame.maxX
+        } else if character.position.x > self.frame.maxX {
+            character.position.x = self.frame.minX
+        }
+
+        if let touchLocation = touchLocation {
+            let dx = touchLocation - character.position.x
+            character.physicsBody?.velocity.dx = dx * 5
+        }
+
+        // **Dynamic Collision Handling**
+        for platform in platforms {
+            let platformBottom = platform.position.y - (platform.size.height - 500)
+            let characterTop = character.position.y + (character.size.height + 300)
+
+            // **if the character is below the platform, remove the physics body**
+          
+            if characterTop < platformBottom  {
+                platform.physicsBody = nil
+            } else {
+                // **re-enable the physics body when the character moves above**
+                if platform.physicsBody == nil {
+                    let restoredBody = SKPhysicsBody(rectangleOf: platform.size)
+                    restoredBody.isDynamic = false
+                    restoredBody.friction = 0.0
+                    restoredBody.restitution = 0.8
+                    restoredBody.categoryBitMask = 1
+                    restoredBody.collisionBitMask = 1
+                    platform.physicsBody = restoredBody
+                }
+            }
+        }
+    }
 
     func gameOver() {
-        character.removeFromParent() // Remove the character from the scene
+        character.removeFromParent()
         let gameOverLabel = SKLabelNode(text: "Game Over")
         gameOverLabel.fontName = "AvenirNext-Bold"
         gameOverLabel.fontSize = 50
         gameOverLabel.fontColor = .red
         gameOverLabel.position = CGPoint(x: frame.midX, y: frame.midY)
         addChild(gameOverLabel)
-
     }
-
-
-        override func update(_ currentTime: TimeInterval) {
-            guard isGameStarted else { return }
-            
-            if character.position.y - (character.size.height * character.yScale / 2) <= self.frame.minY + 60 {
-                gameOver()
-                 isGameStarted = false
-                
-              }
-
-          
-            if character.position.x < self.frame.minX {
-                character.position.x = self.frame.maxX
-            } else if character.position.x > self.frame.maxX {
-                character.position.x = self.frame.minX
-            }
-
-           
-            if let touchLocation = touchLocation {
-                let dx = touchLocation - character.position.x
-                character.physicsBody?.velocity.dx = dx * 5
-            }
-
-          
-            for platform in platforms {
-                if platform.position.y < self.frame.minY + 20 {
-                    platform.position.y = self.frame.minY + 20
-
-                }
-            }
-        }
-
-        // **Spawn new platforms when player reaches a certain height**
-    func newPlatform(){
-        if character.position.y > lastPlatformY - (size.height / 2) {
-            let newPlatformY = lastPlatformY + CGFloat.random(in: 100...200)
-            let randomX = CGFloat.random(in: frame.minX + 50...frame.maxX - 50)
-            createPlatform(at: CGPoint(x: randomX, y: newPlatformY))
-        }
-    }
-        
-
-        // **Allow player to jump on platforms**
-    func jumpPlatforms(){
-        if character.physicsBody?.velocity.dy ?? 0 <= 0 {
-            for platform in platforms {
-                if character.frame.intersects(platform.frame) {
-                    character.physicsBody?.velocity.dy = 600
-                    break
-                }
-            }
-        }
-    }
-
-
-        // Limit max jump speed
-    func jumpSpeed(){
-        if character.physicsBody?.velocity.dy ?? 0 > 900 {
-            character.physicsBody?.velocity.dy = 900
-        }
-        }
-    
-
-   
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
 
         if !isGameStarted {
-            // Game start
             isGameStarted = true
             character.physicsBody?.isDynamic = true
             character.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 170))
@@ -158,20 +143,15 @@ class GameScene: SKScene {
         touchLocation = touch.location(in: self).x
     }
 
-
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         touchLocation = nil
     }
 }
 
 struct ContentView: View {
-   
     var body: some View {
-        VStack{
-            
-            SpriteView(scene: GameScene(size: CGSize(width: 500, height: 800 )) //options: [.ignoresSiblingOrder, .allowsTransparency]
-            )
-              //  .frame(width: 500, height: 900)
+        VStack {
+            SpriteView(scene: GameScene(size: CGSize(width: 500, height: 800)))
                 .ignoresSafeArea()
         }
     }
@@ -179,5 +159,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-      
 }
+
