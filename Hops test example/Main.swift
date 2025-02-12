@@ -24,13 +24,32 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var startLabel: SKLabelNode?
     var lastPlatformY: CGFloat = 0  // tracks the highest platform's Y position
     let jumpVelocity: CGFloat = 600.0
-
+    
+    // MARK: - Score Properties
+    var score: Int = 0
+    var scoreLabel: SKLabelNode!
+    
     // MARK: - Scene Life Cycle
     override func didMove(to view: SKView) {
         setupPhysicsWorld()
         setupBackground()
         setupCharacter()
         setupInitialPlatforms()
+        setupScoreLabel()  // <-- Set up the score label when the scene loads.
+    }
+    
+    // MARK: - Score Setup
+    func setupScoreLabel() {
+        scoreLabel = SKLabelNode(text: "Score: 0")
+        scoreLabel.fontName = "AvenirNext-Bold"
+        scoreLabel.fontSize = 24
+        scoreLabel.fontColor = .black
+        scoreLabel.horizontalAlignmentMode = .left
+        scoreLabel.verticalAlignmentMode = .top
+        // Position in the top left (adding a small margin)
+        scoreLabel.position = CGPoint(x: frame.minX + 20, y: frame.maxY - 20)
+        scoreLabel.zPosition = 10  // Ensure it appears above other nodes.
+        addChild(scoreLabel)
     }
     
     // MARK: - Setup Functions
@@ -55,17 +74,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         character.physicsBody?.friction = 1.0
         character.physicsBody?.linearDamping = 0.0
         character.physicsBody?.affectedByGravity = true
-        // start as non-dynamic until the game begins.
+        // Start as non-dynamic until the game begins.
         character.physicsBody?.isDynamic = false
         
         character.xScale = 0.2
         character.yScale = 0.2
         
-        // set physics categories.
+        // Set physics categories.
         character.physicsBody?.categoryBitMask = PhysicsCategory.character
-        // collide only with platforms.
+        // Collide only with platforms.
         character.physicsBody?.collisionBitMask = PhysicsCategory.platform
-        // notify us when contacting a bounce trigger.
+        // Notify us when contacting a bounce trigger.
         character.physicsBody?.contactTestBitMask = PhysicsCategory.bounceTrigger
         
         addChild(character)
@@ -86,16 +105,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         platform.xScale = 0.5
         platform.yScale = 0.3
         
-        // create the physics body for the platform.
+        // Create the physics body for the platform.
         let platformBody = SKPhysicsBody(rectangleOf: platform.size)
         platformBody.isDynamic = false
         platformBody.friction = 0.0
-        // set restitution to 0 so that the bounce comes only from our trigger.
+        // Set restitution to 0 so that the bounce comes only from our trigger.
         platformBody.restitution = 0.2
         platformBody.categoryBitMask = PhysicsCategory.platform
         platformBody.collisionBitMask = PhysicsCategory.character
         
-        // create a bounce trigger on top of the platform.
+        platform.physicsBody = platformBody
+        
+        // Create a bounce trigger on top of the platform.
         let bounceTrigger = SKNode()
         bounceTrigger.position = CGPoint(x: 0, y: platform.size.height)
         bounceTrigger.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: platform.size.width, height: platform.size.height))
@@ -103,7 +124,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         bounceTrigger.physicsBody?.categoryBitMask = PhysicsCategory.bounceTrigger
         bounceTrigger.physicsBody?.contactTestBitMask = PhysicsCategory.character
         bounceTrigger.physicsBody?.collisionBitMask = 0
-        bounceTrigger.alpha = 0.0  // keep it invisible.
+        bounceTrigger.alpha = 0.0  // Keep it invisible.
         platform.addChild(bounceTrigger)
         
         addChild(platform)
@@ -132,6 +153,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             
             // Bring the character back to the threshold.
             character.position.y = thresholdY
+            
+            // **Update the score based on upward movement**
+            score += Int(offset)
+            scoreLabel.text = "Score: \(score)"
             
             // Move each platform downward by the same offset.
             for platform in platforms {
@@ -319,4 +344,3 @@ struct ContentView_Previews: PreviewProvider {
         ContentView()
     }
 }
-
