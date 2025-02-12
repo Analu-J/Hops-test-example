@@ -13,17 +13,22 @@ struct PhysicsCategory {
     static let character: UInt32     = 0x1 << 0  // 1
     static let platform: UInt32      = 0x1 << 1  // 2
     static let bounceTrigger: UInt32 = 0x1 << 2  // 4
+    static let enemy: UInt32         = 0x1 << 3  // 8
 }
 
 class GameScene: SKScene, SKPhysicsContactDelegate {
     // MARK: - Properties
     var character: SKSpriteNode!
     var platforms: [SKSpriteNode] = []
+    var enemies: [SKSpriteNode] = []
     var touchLocation: CGFloat?
     var isGameStarted = false
     var startLabel: SKLabelNode?
     var lastPlatformY: CGFloat = 0  // tracks the highest platform's Y position
     let jumpVelocity: CGFloat = 600.0
+    
+    // Limit the number of enemies on screen.
+    let maxEnemiesOnScreen: Int = 5
     
     // MARK: - Score Properties
     var score: Int = 0
@@ -35,7 +40,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         setupBackground()
         setupCharacter()
         setupInitialPlatforms()
-        setupScoreLabel()  // <-- Set up the score label when the scene loads.
+        setupScoreLabel()
+        
+        // Schedule enemy spawns every 3 seconds.
+        let spawnEnemyAction = SKAction.run { [weak self] in
+            self?.spawnEnemy()
+        }
+        let waitAction = SKAction.wait(forDuration: 3.0)
+        let spawnSequence = SKAction.sequence([spawnEnemyAction, waitAction])
+        run(SKAction.repeatForever(spawnSequence))
     }
     
     // MARK: - Score Setup
@@ -46,7 +59,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         scoreLabel.fontColor = .black
         scoreLabel.horizontalAlignmentMode = .left
         scoreLabel.verticalAlignmentMode = .top
-        // Position in the top left (adding a small margin)
         scoreLabel.position = CGPoint(x: frame.minX + 20, y: frame.maxY - 20)
         scoreLabel.zPosition = 10  // Ensure it appears above other nodes.
         addChild(scoreLabel)
@@ -82,10 +94,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         // Set physics categories.
         character.physicsBody?.categoryBitMask = PhysicsCategory.character
-        // Collide only with platforms.
         character.physicsBody?.collisionBitMask = PhysicsCategory.platform
-        // Notify us when contacting a bounce trigger.
-        character.physicsBody?.contactTestBitMask = PhysicsCategory.bounceTrigger
+        character.physicsBody?.contactTestBitMask = PhysicsCategory.bounceTrigger | PhysicsCategory.enemy
         
         addChild(character)
     }
@@ -105,15 +115,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         platform.xScale = 0.5
         platform.yScale = 0.3
         
-        // Create the physics body for the platform.
         let platformBody = SKPhysicsBody(rectangleOf: platform.size)
         platformBody.isDynamic = false
         platformBody.friction = 0.0
-        // Set restitution to 0 so that the bounce comes only from our trigger.
         platformBody.restitution = 0.2
         platformBody.categoryBitMask = PhysicsCategory.platform
         platformBody.collisionBitMask = PhysicsCategory.character
-        
         platform.physicsBody = platformBody
         
         // Create a bounce trigger on top of the platform.
@@ -124,12 +131,52 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         bounceTrigger.physicsBody?.categoryBitMask = PhysicsCategory.bounceTrigger
         bounceTrigger.physicsBody?.contactTestBitMask = PhysicsCategory.character
         bounceTrigger.physicsBody?.collisionBitMask = 0
-        bounceTrigger.alpha = 0.0  // Keep it invisible.
+        bounceTrigger.alpha = 0.0  // Invisible trigger.
         platform.addChild(bounceTrigger)
         
         addChild(platform)
         platforms.append(platform)
         lastPlatformY = max(lastPlatformY, position.y)
+    }
+    
+    // MARK: - Enemy Spawning
+    func spawnEnemy() {
+        // Only spawn if the game is running and the on-screen enemy count is below the limit.
+        guard isGameStarted, enemies.count < maxEnemiesOnScreen else { return }
+        
+        let enemySize = CGSize(width: 40, height: 40)
+        let enemy = SKSpriteNode(color: .red, size: enemySize)
+        
+        // Spawn the enemy off-screen above the top edge so it scrolls into view.
+        let spawnY = frame.maxY + enemySize.height
+        let minX = frame.minX + enemySize.width / 2
+        let maxX = frame.maxX - enemySize.width / 2
+        let spawnX = CGFloat.random(in: minX...maxX)
+        enemy.position = CGPoint(x: spawnX, y: spawnY)
+        
+        enemy.physicsBody = SKPhysicsBody(rectangleOf: enemySize)
+        enemy.physicsBody?.isDynamic = false
+        enemy.physicsBody?.categoryBitMask = PhysicsCategory.enemy
+        enemy.physicsBody?.collisionBitMask = 0
+        enemy.physicsBody?.contactTestBitMask = PhysicsCategory.character
+        
+        addChild(enemy)
+        enemies.append(enemy)
+        
+        // Choose horizontal or vertical movement for some additional animation.
+        let moveDistance: CGFloat = 100.0
+        let duration = Double.random(in: 1.5...3.0)
+        if Bool.random() {
+            let moveRight = SKAction.moveBy(x: moveDistance, y: 0, duration: duration)
+            let moveLeft = SKAction.moveBy(x: -moveDistance, y: 0, duration: duration)
+            let sequence = SKAction.sequence([moveRight, moveLeft])
+            enemy.run(SKAction.repeatForever(sequence))
+        } else {
+            let moveDown = SKAction.moveBy(x: 0, y: -moveDistance, duration: duration)
+            let moveUp = SKAction.moveBy(x: 0, y: moveDistance, duration: duration)
+            let sequence = SKAction.sequence([moveDown, moveUp])
+            enemy.run(SKAction.repeatForever(sequence))
+        }
     }
     
     // MARK: - Game Loop
@@ -141,33 +188,33 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         applyScreenWrap()
         updateCharacterMovement()
         updatePlatformsPhysics()
+        removeOffscreenEnemies()
     }
     
-    /// Scrolls the platforms downward when the character climbs high.
+    /// Scrolls the platforms downward when the character climbs high and shifts enemies accordingly.
     func scrollPlatforms() {
-        // Define the threshold (here, the vertical midpoint of the scene).
         let thresholdY = frame.midY
         if character.position.y > thresholdY {
-            // Calculate how far above the threshold the character is.
             let offset = character.position.y - thresholdY
-            
-            // Bring the character back to the threshold.
             character.position.y = thresholdY
             
-            // **Update the score based on upward movement**
             score += Int(offset)
             scoreLabel.text = "Score: \(score)"
             
-            // Move each platform downward by the same offset.
             for platform in platforms {
                 platform.position.y -= offset
                 
-                // If a platform has moved off-screen at the bottom, reposition it at the top.
+                // Reposition platforms that have moved off-screen at the bottom.
                 if platform.position.y < frame.minY - platform.size.height {
                     let newX = CGFloat.random(in: 50...(size.width - 50))
                     platform.position.y = frame.maxY + platform.size.height
                     platform.position.x = newX
                 }
+            }
+            
+            // Shift enemies downward as well.
+            for enemy in enemies {
+                enemy.position.y -= offset
             }
         }
     }
@@ -175,7 +222,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     /// Checks if the character has fallen too low and triggers game over.
     func checkGameOverCondition() {
         let characterBottom = character.position.y - (character.size.height * character.yScale / 2)
-        if characterBottom <= self.frame.minY + 60 {
+        if characterBottom <= frame.minY + 60 {
             gameOver()
             isGameStarted = false
         }
@@ -183,10 +230,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     /// Wraps the character around the screen edges.
     func applyScreenWrap() {
-        if character.position.x < self.frame.minX {
-            character.position.x = self.frame.maxX
-        } else if character.position.x > self.frame.maxX {
-            character.position.x = self.frame.minX
+        if character.position.x < frame.minX {
+            character.position.x = frame.maxX
+        } else if character.position.x > frame.maxX {
+            character.position.x = frame.minX
         }
     }
     
@@ -198,17 +245,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     
-    /// Updates the physics bodies for platforms based on the character's position.
+    /// Updates platform physics based on the character's position.
     func updatePlatformsPhysics() {
         for platform in platforms {
             let platformBottom = platform.position.y - (platform.size.height - 500)
             let characterTop = character.position.y + (character.size.height + 300)
-            
-            // Remove the physics body if the character is far below the platform.
             if characterTop < platformBottom {
                 platform.physicsBody = nil
             } else {
-                // Restore the physics body if needed.
                 if platform.physicsBody == nil {
                     let restoredBody = SKPhysicsBody(rectangleOf: platform.size)
                     restoredBody.isDynamic = false
@@ -222,11 +266,21 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     
+    /// Removes enemies that have scrolled off the bottom of the screen.
+    func removeOffscreenEnemies() {
+        for (index, enemy) in enemies.enumerated().reversed() {
+            if enemy.position.y < frame.minY - enemy.size.height {
+                enemy.removeFromParent()
+                enemies.remove(at: index)
+            }
+        }
+    }
+    
     // MARK: - Game Over Handling
     func gameOver() {
         character.removeFromParent()
         let gameOverLabel = SKLabelNode(text: "Game Over\nTap to Restart")
-        gameOverLabel.name = "gameOverLabel" // Assign a name for detection.
+        gameOverLabel.name = "gameOverLabel"
         gameOverLabel.fontName = "AvenirNext-Bold"
         gameOverLabel.fontSize = 50
         gameOverLabel.fontColor = .black
@@ -250,30 +304,30 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     // MARK: - SKPhysicsContactDelegate
     func didBegin(_ contact: SKPhysicsContact) {
-        var characterBody: SKPhysicsBody?
-        var otherBody: SKPhysicsBody?
+        var firstBody: SKPhysicsBody
+        var secondBody: SKPhysicsBody
         
-        if contact.bodyA.categoryBitMask == PhysicsCategory.character {
-            characterBody = contact.bodyA
-            otherBody = contact.bodyB
-        } else if contact.bodyB.categoryBitMask == PhysicsCategory.character {
-            characterBody = contact.bodyB
-            otherBody = contact.bodyA
+        if contact.bodyA.categoryBitMask < contact.bodyB.categoryBitMask {
+            firstBody = contact.bodyA
+            secondBody = contact.bodyB
+        } else {
+            firstBody = contact.bodyB
+            secondBody = contact.bodyA
         }
         
-        guard let charBody = characterBody, let other = otherBody else { return }
+        // Bounce logic for platforms.
+        if firstBody.categoryBitMask == PhysicsCategory.character,
+           (secondBody.categoryBitMask == PhysicsCategory.bounceTrigger ||
+            (secondBody.categoryBitMask == PhysicsCategory.platform &&
+             contact.contactPoint.y >= (secondBody.node!.position.y + (secondBody.node!.frame.size.height / 2) - 5))) {
+            firstBody.velocity = CGVector(dx: firstBody.velocity.dx, dy: jumpVelocity)
+        }
         
-        // Bounce only when falling.
-        if charBody.velocity.dy <= 0 {
-            if other.categoryBitMask == PhysicsCategory.bounceTrigger {
-                charBody.velocity = CGVector(dx: charBody.velocity.dx, dy: jumpVelocity)
-            } else if other.categoryBitMask == PhysicsCategory.platform,
-                      let platformNode = other.node as? SKSpriteNode {
-                let platformTopY = platformNode.position.y + (platformNode.size.height * platformNode.yScale / 2)
-                if contact.contactPoint.y >= platformTopY - 5 {
-                    charBody.velocity = CGVector(dx: charBody.velocity.dx, dy: jumpVelocity)
-                }
-            }
+        // Enemy collision logic.
+        if firstBody.categoryBitMask == PhysicsCategory.character &&
+           secondBody.categoryBitMask == PhysicsCategory.enemy {
+            gameOver()
+            isGameStarted = false
         }
     }
     
@@ -282,15 +336,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
         
-        // If the game over label is present and tapped, restart the game.
-        if let gameOverLabel = self.childNode(withName: "gameOverLabel") {
-            if gameOverLabel.contains(location) {
-                restartGame()
-                return
-            }
+        // If game over, restart.
+        if let gameOverLabel = self.childNode(withName: "gameOverLabel"),
+           gameOverLabel.contains(location) {
+            restartGame()
+            return
         }
         
-        // Start the game if it hasn't started yet.
         if !isGameStarted {
             startGame()
         } else {
@@ -322,13 +374,13 @@ struct SpriteKitView: UIViewRepresentable {
         let skView = SKView()
         skView.showsFPS = true
         skView.showsNodeCount = true
-        skView.showsPhysics = true  // Show physics outlines for debugging.
+        skView.showsPhysics = true  // For debugging.
         skView.presentScene(scene)
         return skView
     }
     
     func updateUIView(_ uiView: SKView, context: Context) {
-        // Update the view if needed.
+        // Update view if needed.
     }
 }
 
