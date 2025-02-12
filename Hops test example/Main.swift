@@ -22,7 +22,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var touchLocation: CGFloat?
     var isGameStarted = false
     var startLabel: SKLabelNode?
-    var lastPlatformY: CGFloat = 0  // Tracks the highest platform's Y position
+    var lastPlatformY: CGFloat = 0  // tracks the highest platform's Y position
     let jumpVelocity: CGFloat = 600.0
 
     // MARK: - Scene Life Cycle
@@ -94,8 +94,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         platformBody.restitution = 0.2
         platformBody.categoryBitMask = PhysicsCategory.platform
         platformBody.collisionBitMask = PhysicsCategory.character
-        // (you can assign the physics body if needed, for now it’s left commented out.)
-        // platform.physicsBody = platformBody
         
         // create a bounce trigger on top of the platform.
         let bounceTrigger = SKNode()
@@ -105,7 +103,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         bounceTrigger.physicsBody?.categoryBitMask = PhysicsCategory.bounceTrigger
         bounceTrigger.physicsBody?.contactTestBitMask = PhysicsCategory.character
         bounceTrigger.physicsBody?.collisionBitMask = 0
-        bounceTrigger.alpha = 0.0  // keep it invisible
+        bounceTrigger.alpha = 0.0  // keep it invisible.
         platform.addChild(bounceTrigger)
         
         addChild(platform)
@@ -117,35 +115,30 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     override func update(_ currentTime: TimeInterval) {
         guard isGameStarted else { return }
         
-        // scroll platforms downward when the character climbs high.
         scrollPlatforms()
-        
         checkGameOverCondition()
         applyScreenWrap()
         updateCharacterMovement()
         updatePlatformsPhysics()
     }
     
-    /// This function checks if the character has climbed above a certain threshold.
-    /// If so, it moves all platforms downward by the excess amount.
-    /// Platforms that move off the bottom are recycled to the top with a new random x-position.
+    /// Scrolls the platforms downward when the character climbs high.
     func scrollPlatforms() {
-        // define the threshold (here, the vertical midpoint of the scene).
+        // Define the threshold (here, the vertical midpoint of the scene).
         let thresholdY = frame.midY
         if character.position.y > thresholdY {
-            // calculate how far above the threshold the character is.
+            // Calculate how far above the threshold the character is.
             let offset = character.position.y - thresholdY
             
-            // bring the character back to the threshold.
+            // Bring the character back to the threshold.
             character.position.y = thresholdY
             
-            // move each platform downward by the same offset.
+            // Move each platform downward by the same offset.
             for platform in platforms {
                 platform.position.y -= offset
                 
-                // if a platform has moved off-screen at the bottom...
+                // If a platform has moved off-screen at the bottom, reposition it at the top.
                 if platform.position.y < frame.minY - platform.size.height {
-                    // reposition it at the top with a new random x value.
                     let newX = CGFloat.random(in: 50...(size.width - 50))
                     platform.position.y = frame.maxY + platform.size.height
                     platform.position.x = newX
@@ -154,6 +147,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     
+    /// Checks if the character has fallen too low and triggers game over.
     func checkGameOverCondition() {
         let characterBottom = character.position.y - (character.size.height * character.yScale / 2)
         if characterBottom <= self.frame.minY + 60 {
@@ -162,6 +156,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     
+    /// Wraps the character around the screen edges.
     func applyScreenWrap() {
         if character.position.x < self.frame.minX {
             character.position.x = self.frame.maxX
@@ -170,6 +165,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     
+    /// Moves the character horizontally toward the touch location.
     func updateCharacterMovement() {
         if let targetX = touchLocation {
             let dx = targetX - character.position.x
@@ -177,16 +173,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     
+    /// Updates the physics bodies for platforms based on the character's position.
     func updatePlatformsPhysics() {
         for platform in platforms {
             let platformBottom = platform.position.y - (platform.size.height - 500)
             let characterTop = character.position.y + (character.size.height + 300)
             
-            // remove the physics body if the character is far below the platform.
+            // Remove the physics body if the character is far below the platform.
             if characterTop < platformBottom {
                 platform.physicsBody = nil
             } else {
-                // restore the physics body if needed.
+                // Restore the physics body if needed.
                 if platform.physicsBody == nil {
                     let restoredBody = SKPhysicsBody(rectangleOf: platform.size)
                     restoredBody.isDynamic = false
@@ -203,12 +200,27 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     // MARK: - Game Over Handling
     func gameOver() {
         character.removeFromParent()
-        let gameOverLabel = SKLabelNode(text: "Game Over")
+        let gameOverLabel = SKLabelNode(text: "Game Over\nTap to Restart")
+        gameOverLabel.name = "gameOverLabel" // Assign a name for detection.
         gameOverLabel.fontName = "AvenirNext-Bold"
         gameOverLabel.fontSize = 50
-        gameOverLabel.fontColor = .red
+        gameOverLabel.fontColor = .black
+        gameOverLabel.numberOfLines = 2
+        gameOverLabel.horizontalAlignmentMode = .center
+        gameOverLabel.verticalAlignmentMode = .center
         gameOverLabel.position = CGPoint(x: frame.midX, y: frame.midY)
         addChild(gameOverLabel)
+        
+        isGameStarted = false
+    }
+    
+    // MARK: - Restart Function
+    func restartGame() {
+        guard let view = self.view else { return }
+        let newScene = GameScene(size: self.size)
+        newScene.scaleMode = self.scaleMode
+        let transition = SKTransition.fade(withDuration: 1.0)
+        view.presentScene(newScene, transition: transition)
     }
     
     // MARK: - SKPhysicsContactDelegate
@@ -224,9 +236,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             otherBody = contact.bodyA
         }
         
-        guard let charBody = characterBody, let other = otherBody else {
-            return
-        }
+        guard let charBody = characterBody, let other = otherBody else { return }
         
         // Bounce only when falling.
         if charBody.velocity.dy <= 0 {
@@ -245,10 +255,21 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     // MARK: - Touch Handling
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
+        let location = touch.location(in: self)
+        
+        // If the game over label is present and tapped, restart the game.
+        if let gameOverLabel = self.childNode(withName: "gameOverLabel") {
+            if gameOverLabel.contains(location) {
+                restartGame()
+                return
+            }
+        }
+        
+        // Start the game if it hasn't started yet.
         if !isGameStarted {
             startGame()
         } else {
-            touchLocation = touch.location(in: self).x
+            touchLocation = location.x
         }
     }
     
@@ -298,3 +319,4 @@ struct ContentView_Previews: PreviewProvider {
         ContentView()
     }
 }
+
