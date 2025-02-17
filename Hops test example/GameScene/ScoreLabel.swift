@@ -16,7 +16,7 @@ extension GameScene {
         scoreLabel.fontColor = .black
         scoreLabel.horizontalAlignmentMode = .left
         scoreLabel.verticalAlignmentMode = .top
-        scoreLabel.position = CGPoint(x: frame.minX + 20, y: frame.maxY - 20)
+        scoreLabel.position = CGPoint(x: frame.minX + 20, y: frame.maxY - 50)
         scoreLabel.zPosition = 10  // Ensure it appears above other nodes.
         addChild(scoreLabel)
     }
