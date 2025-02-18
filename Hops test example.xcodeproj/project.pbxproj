@@ -29,22 +29,9 @@
 		470B6EFD2D38355800FA09B4 /* Hops test exampleUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Hops test exampleUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		47A2FF272D52BC3900940CC5 /* Exceptions for "Hops test example" folder in "Hops test example" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				did.swift,
-			);
-			target = 470B6ED92D38355700FA09B4 /* Hops test example */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		470B6EDC2D38355700FA09B4 /* Hops test example */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				47A2FF272D52BC3900940CC5 /* Exceptions for "Hops test example" folder in "Hops test example" target */,
-			);
 			path = "Hops test example";
 			sourceTree = "<group>";
 		};
