@@ -14,7 +14,7 @@ class MainMenuScene: SKScene {
         let background = SKSpriteNode(imageNamed: "MainScreenBackground")
         background.position = CGPoint(x: frame.midX, y: frame.midY)
         background.zPosition = 0
-        background.size = self.size  // Fill the entire scene (optional).
+        background.size = self.size  // fill the entire scene 
         addChild(background)
         
         // set up start button image.
