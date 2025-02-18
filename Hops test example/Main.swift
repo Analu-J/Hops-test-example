@@ -35,6 +35,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
 }
 
+// MARK: - Screen View & Debug
 struct SpriteKitView: UIViewRepresentable {
     let scene: SKScene
     
@@ -52,12 +53,20 @@ struct SpriteKitView: UIViewRepresentable {
     }
 }
 
+
+import SwiftUI
+
 struct ContentView: View {
     var body: some View {
         SpriteKitView(scene: GameScene(size: CGSize(width: 500, height: 800)))
             .ignoresSafeArea()
+            .onAppear {
+                GameCenterManager.shared.authenticateLocalPlayer()
+            }
     }
 }
+
+
 
 #Preview {
         ContentView()

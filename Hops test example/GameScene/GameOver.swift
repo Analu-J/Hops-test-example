@@ -13,13 +13,13 @@ extension GameScene {
         // Remove the character.
         character.removeFromParent()
         
-        // Create a semi-transparent background for the game over screen.
+        // Create a semi-transparent background.
         let gameOverBG = SKSpriteNode(color: UIColor.black.withAlphaComponent(0.7), size: CGSize(width: frame.width, height: frame.height))
         gameOverBG.position = CGPoint(x: frame.midX, y: frame.midY)
         gameOverBG.zPosition = 5
         addChild(gameOverBG)
         
-        // Place the game over asset (an image asset named "Gameover") over the background.
+        // Display the Game Over asset.
         let gameOverAsset = SKSpriteNode(imageNamed: "Gameover")
         gameOverAsset.position = CGPoint(x: frame.midX, y: frame.midY)
         gameOverAsset.xScale = 0.15
@@ -28,17 +28,16 @@ extension GameScene {
         gameOverAsset.name = "gameOverAsset"
         addChild(gameOverAsset)
         
-        // Create and add a label to display the final score.
+        // Display the final score.
         let finalScoreLabel = SKLabelNode(text: "Score: \(score)")
         finalScoreLabel.fontName = "AvenirNext-Bold"
         finalScoreLabel.fontSize = 28
         finalScoreLabel.fontColor = .white
-        // Position it above the game over asset (adjust the offset as needed).
         finalScoreLabel.position = CGPoint(x: frame.midX, y: frame.midY + gameOverAsset.size.height/2 + 30)
         finalScoreLabel.zPosition = 7
         addChild(finalScoreLabel)
         
-        // Add a "Tap to Restart" label below the asset.
+        // Add a "Tap to Restart" label.
         let restartLabel = SKLabelNode(text: "Tap to Restart")
         restartLabel.fontName = "AvenirNext-Bold"
         restartLabel.fontSize = 24
@@ -48,6 +47,23 @@ extension GameScene {
         restartLabel.name = "gameOverRestartLabel"
         addChild(restartLabel)
         
+        // submit the score using your leaderboard ID.
+        GameCenterManager.shared.submitScore(score)
+        
+        let leaderboardButton = SKLabelNode(text: "View Leaderboard")
+        // configure font, position, etc.
+        leaderboardButton.name = "leaderboardButton"
+        leaderboardButton.fontName = "AvenirNext-Bold"
+        leaderboardButton.fontSize = 24
+        leaderboardButton.position = CGPoint(x: frame.maxX - 20, y: frame.maxY - 50)
+        leaderboardButton.zPosition = 999
+        leaderboardButton.fontColor = .white
+        leaderboardButton.verticalAlignmentMode = .top
+        leaderboardButton.horizontalAlignmentMode = .right
+        addChild(leaderboardButton)
+
+        
         isGameStarted = false
     }
+    
 }

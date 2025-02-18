@@ -13,6 +13,15 @@ extension GameScene {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
         
+        // check for the leaderboard button tap.
+        if let leaderboardButton = self.childNode(withName: "leaderboardButton"),
+           leaderboardButton.contains(location) {
+            // if you have a showLeaderboard() function that automatically finds
+            // the root view controller, you can call it directly:
+            GameCenterManager.shared.showLeaderboard()
+            return
+        }
+        
         // if the game over asset or the restart label is tapped, restart the game.
         if let gameOverAsset = self.childNode(withName: "gameOverAsset"),
            gameOverAsset.contains(location) {
@@ -26,7 +35,7 @@ extension GameScene {
             return
         }
         
-        // otherwise, if the game hasn't started, start it.
+        //  otherwise, if the game hasn't started, start it.
         if !isGameStarted {
             startGame()
         } else {
