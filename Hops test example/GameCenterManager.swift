@@ -12,12 +12,11 @@ class GameCenterManager: NSObject, GKGameCenterControllerDelegate {
     
     static let shared = GameCenterManager()
     
-    // authenticates the local player. Call this early (e.g., when your app launches or your main view appears).
+    // authenticates the local player. call this early (e.g., when your app launches or your main view appears).
     func authenticateLocalPlayer() {
         let localPlayer = GKLocalPlayer.local
         localPlayer.authenticateHandler = { viewController, error in
             if let vc = viewController {
-                // For iOS 15+, fix the 'windows was deprecated' warning by using UIWindowScene.windows
                 if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                    let window = windowScene.windows.first,
                    let rootVC = window.rootViewController {
