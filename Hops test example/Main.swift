@@ -33,6 +33,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var score: Int = 0
     var scoreLabel: SKLabelNode!
     
+    // MARK: – Parallax
+    /// Manages all the code‑drawn background layers
+    let parallaxBG = ParallaxBackground()
+    // MARK: – Ground & Static Trees
+    /// The green ground rectangle
+    var groundNode: SKShapeNode?
+
+    /// The trees sitting on that ground
+    var staticTrees: [SKNode] = []
+
+
+    
 }
 
 // MARK: - Screen View & Debug

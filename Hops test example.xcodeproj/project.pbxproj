@@ -45,6 +45,11 @@
 			path = "Hops test exampleUITests";
 			sourceTree = "<group>";
 		};
+		476675AA2DB695B60043122D /* ParallaxController  */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "ParallaxController ";
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,6 +84,7 @@
 				470B6EF62D38355800FA09B4 /* Hops test exampleTests */,
 				470B6F002D38355800FA09B4 /* Hops test exampleUITests */,
 				470B6EDB2D38355700FA09B4 /* Products */,
+				476675AA2DB695B60043122D /* ParallaxController  */,
 			);
 			sourceTree = "<group>";
 		};
@@ -109,6 +115,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				470B6EDC2D38355700FA09B4 /* Hops test example */,
+				476675AA2DB695B60043122D /* ParallaxController  */,
 			);
 			name = "Hops test example";
 			packageProductDependencies = (

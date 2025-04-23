@@ -44,6 +44,18 @@ extension GameScene {
             // shift enemies downward as well.
             for enemy in enemies {
                 enemy.position.y -= offset
+                
+              //  only move your cloud layer when the player moves up
+                        parallaxBG.shift(by: offset)
+                
+                    //  Shift ground and static trees
+                    groundNode?.position.y -= offset
+                    for tree in staticTrees {
+                        tree.position.y -= offset
+                    }
+    
+                
+                   
             }
         }
     }
@@ -79,6 +91,7 @@ extension GameScene {
         for platform in platforms {
             let platformBottom = platform.position.y - (platform.size.height - 475)
             let characterTop = character.position.y + (character.size.height + 300)
+            /// character top < charatcer bottom 
             if characterTop < platformBottom {
                 platform.physicsBody = nil
             } else {

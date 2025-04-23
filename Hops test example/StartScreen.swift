@@ -25,6 +25,23 @@ class MainMenuScene: SKScene {
         startButton.yScale = 0.6
         startButton.name = "startButton" // So we can detect taps on it.
         addChild(startButton)
+        
+        //set up skin button image
+        let skinButton = SKSpriteNode(imageNamed: "SkinButton")
+        skinButton.position = CGPoint(x: frame.maxX - 75, y: frame.maxY - 70)
+        skinButton.xScale = 0.6
+        skinButton.yScale = 0.6
+//        skinButton.verticalAlignmentMode = .top
+//        skinButton.horizontalAlignmentMode = .right
+        addChild(skinButton)
+        
+        let optionButton = SKSpriteNode(imageNamed: "OptionButton")
+        optionButton.position = CGPoint(x: frame.maxX - 420, y: frame.maxY - 70)
+        optionButton.xScale = 0.6
+        optionButton.yScale = 0.6
+//        skinButton.verticalAlignmentMode = .top
+//        skinButton.horizontalAlignmentMode = .right
+        addChild(optionButton)
     }
     
     // MARK: - Touches
@@ -37,6 +54,11 @@ class MainMenuScene: SKScene {
         if node.name == "startButton" {
             presentGameScene()
         }
+    
+        if node.name == "SkinButton" {
+            
+        }
+        
     }
     
     private func presentGameScene() {

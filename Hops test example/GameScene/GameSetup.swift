@@ -35,7 +35,7 @@ extension GameScene {
         character = SKSpriteNode(imageNamed: "Hops")
         character.position = CGPoint(x: frame.midX, y: frame.minY + 100)
         character.physicsBody = SKPhysicsBody(rectangleOf: character.size)
-        character.physicsBody?.allowsRotation = false
+        character.physicsBody?.allowsRotation = false 
         character.physicsBody?.restitution = 0.0
         character.physicsBody?.friction = 1.0
         character.physicsBody?.linearDamping = 0.0

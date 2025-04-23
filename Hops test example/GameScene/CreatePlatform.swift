@@ -26,7 +26,7 @@ extension GameScene {
         // create a bounce trigger on top of the platform.
         let bounceTrigger = SKNode()
         bounceTrigger.position = CGPoint(x: 0, y: platform.size.height)
-        bounceTrigger.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: platform.size.width, height: platform.size.height))
+        bounceTrigger.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: platform.size.width, height: platform.size.height - 30))
         bounceTrigger.physicsBody?.isDynamic = false
         bounceTrigger.physicsBody?.categoryBitMask = PhysicsCategory.bounceTrigger
         bounceTrigger.physicsBody?.contactTestBitMask = PhysicsCategory.character
